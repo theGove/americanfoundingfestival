@@ -1,0 +1,66 @@
+  body{
+    margin:0;
+    background: url(images/parchment.jpg);
+}
+
+#splash{
+    width:100%;
+    height: 100vh;
+
+}
+
+#splash-text{
+    width:100%;
+    height: 10vh;
+    text-align: center;
+    padding: 1rem;
+    font-family: "Merienda", cursive;
+    font-optical-sizing: auto;
+    font-weight: 800;
+    font-style: normal;
+    font-size: 2rem;  
+     
+}
+
+  #content{
+    background-color: rgb(255,255,255,.5);
+    margin:auto;
+    padding: 1rem 2rem;
+    text-align: left;
+    font-size: 1.2rem;
+    max-width: 1000px;
+    line-height:1.7;
+    margin-top: 1rem;
+  }
+
+
+  #hero{
+    background: url(images/bg.jpg) no-repeat center center fixed; 
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    height: 90%;
+    width: 100%;
+  }
+
+
+
+  .libre-baskerville-regular {
+    font-family: "Libre Baskerville", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+  .libre-baskerville-regular-italic {
+    font-family: "Libre Baskerville", serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+  
+  .libre-baskerville-bold {
+    font-family: "Libre Baskerville", serif;
+    font-weight: 700;
+    font-style: normal;
+  }
+  
