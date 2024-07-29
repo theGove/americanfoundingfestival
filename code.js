@@ -1,5 +1,5 @@
 let intervalId
-const images=["volley.jpg","spin.jpg","book.jpg","adams.jpg","cannon.jpg","print.jpg","red.jpg","bg.jpg","cook.jpg"]
+const images=["bg.jpg","volley.jpg","book.jpg","book.jpg","adams.jpg","cannon.jpg","print.jpg","red.jpg","cook.jpg"]
 
 
 function init(){
