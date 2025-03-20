@@ -7,11 +7,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap" rel="stylesheet">    
     <script>
-        const deploymentId="AKfycbw44MMPKb0RpIY20RP2RubZsn_7ycT2awlLT0bvR3Nb9QpO2YXhBgutPKHujJtm2tY"
+        const deploymentId="AKfycbyOD8F5jfn8k9Xf2luLQs6fRDibIFwSCPyL7XfjbLjmTtZOw3SmozhDEFvzzVxJ_NwS"
         const url=`https://script.google.com/macros/s/${deploymentId}/exec`
         function init() {
             const params = new URLSearchParams(document.location.search);
             const name = params.get("name"); 
+            if(!name){
+                document.getElementById("schedule").innerHTML = "No name provided in URL.  Cannot get schedule.";
+                return
+            }
+            document.getElementById("message").style.display="block"
             document.getElementById("name").innerHTML = name;
             fetch(url + "?mode=schedule&name=" + encodeURIComponent(name))
             .then(response => {
@@ -22,22 +27,28 @@
             })
             .then(allData => {
                 // Process the data
+                console.log(allData);
+                document.getElementById("name").innerHTML = allData.name;
                 document.getElementById("message").style.display="none"
-                for(const data of allData){
-                    var tbl =  document.createElement("TABLE");
-                    tbl.className = "day-table";
+                if(allData){
+                    for(const data of allData.schedule){
+                        var tbl =  document.createElement("TABLE");
+                        tbl.className = "day-table";
 
-                    console.log(data);
-                    const classes = new Array(data[0].length).fill("venue");
-                    classes[0] = "day";
-                    addRow(tbl, data.shift(),classes);
-                    for(const row of data){
-                        const classes = new Array(row.length).fill("appointment");
-                        classes[0] = "time";
-                        console.log(classes)
-                        addRow(tbl, row,classes);
+                        console.log(data);
+                        const classes = new Array(data[0].length).fill("venue");
+                        classes[0] = "day";
+                        addRow(tbl, data.shift(),classes);
+                        for(const row of data){
+                            const classes = new Array(row.length).fill("appointment");
+                            classes[0] = "time";
+                            console.log(classes)
+                            addRow(tbl, row,classes);
+                        }
+                        document.getElementById("schedule").appendChild(tbl);
                     }
-                    document.getElementById("schedule").appendChild(tbl);
+                }else{
+                    document.getElementById("schedule").innerHTML = "No Schedule Found. Check URL.";
                 }
             })
             .catch(error => {
@@ -138,7 +149,7 @@
     <div id="sched">Participant Schedule</div>
     <div id="body">
      <div id="name"></div>
-     <div id="message">Getting Schedule . . . </div>
+     <div id="message" style="display: none;">Getting Schedule . . . </div>
     
     <div id="schedule">
 
