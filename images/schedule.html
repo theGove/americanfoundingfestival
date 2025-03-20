@@ -1,0 +1,148 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap" rel="stylesheet">    
+    <script>
+        const deploymentId="AKfycbw44MMPKb0RpIY20RP2RubZsn_7ycT2awlLT0bvR3Nb9QpO2YXhBgutPKHujJtm2tY"
+        const url=`https://script.google.com/macros/s/${deploymentId}/exec`
+        function init() {
+            const params = new URLSearchParams(document.location.search);
+            const name = params.get("name"); 
+            document.getElementById("name").innerHTML = name;
+            fetch(url + "?mode=schedule&name=" + encodeURIComponent(name))
+            .then(response => {
+                if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json(); // or response.text(), response.blob(), etc.
+            })
+            .then(allData => {
+                // Process the data
+                document.getElementById("message").style.display="none"
+                for(const data of allData){
+                    var tbl =  document.createElement("TABLE");
+                    tbl.className = "day-table";
+
+                    console.log(data);
+                    const classes = new Array(data[0].length).fill("venue");
+                    classes[0] = "day";
+                    addRow(tbl, data.shift(),classes);
+                    for(const row of data){
+                        const classes = new Array(row.length).fill("appointment");
+                        classes[0] = "time";
+                        console.log(classes)
+                        addRow(tbl, row,classes);
+                    }
+                    document.getElementById("schedule").appendChild(tbl);
+                }
+            })
+            .catch(error => {
+                // Handle errors
+                console.error('There was a problem with the fetch operation:', error);
+            });
+        }
+        function addRow(table, data, classes){
+            let row = table.insertRow();
+            for(let x=0;x<data.length;x++){
+              let cell = row.insertCell();
+              if(Array.isArray(classes)){
+                cell.className = classes[x];
+              }else{
+                cell.className = classes;
+              }
+              cell.innerHTML = data[x];
+            }
+
+        }
+    </script>
+    <style>
+        body { 
+            font-family: 'Merriweather', serif; 
+            padding: 0;
+            margin: 0 ;
+            background-color: #FFEBCD;
+        }
+        #header{
+            background-color: maroon;
+            color:white;
+            text-align: center;
+            padding:10px;
+        }
+        #message{
+            animation: blinker 2s linear infinite;
+        }
+        @keyframes blinker {
+        50% {
+            opacity: 0;
+        }
+        }
+        #name{
+            margin-top: 20px;
+            font-size: 50px;
+        }
+        #sched{
+            background-color: #2B3856;
+            color:white;
+            text-align: center;
+            padding:10px;
+            font-size: 20px;
+        }
+        .day-table{
+            border-collapse: collapse;
+            padding:3px;
+            margin:auto;
+            margin-bottom:20px;
+            
+        }
+        .venue{
+            background-color: #2B3856;
+            color:white;    
+            padding:3px 10px;    
+            text-align: left ;
+        }
+        .time{
+            background-color: maroon;
+            color:white;    
+            padding:3px 10px;    
+            text-align: right ;
+        }
+        .day{
+            background-color: darkgreen;
+            color:yellow;    
+            padding:3px 10px;    
+            text-align: center ;
+            text-transform: capitalize;
+        }
+        .empty{
+            text-align: right ;
+        }
+        .appointment{
+            background-color: white;
+            color:black;    
+            padding:3px 10px;    
+            text-align: center ;
+            border: 1px solid darkgrey;
+        }
+        #body{
+            margin: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body onLoad="init()">
+    <div id="header">America 250 Founders Festival</div>
+    <div id="sched">Participant Schedule</div>
+    <div id="body">
+     <div id="name"></div>
+     <div id="message">Getting Schedule . . . </div>
+    
+    <div id="schedule">
+
+    </div>
+    </div>
+</body>
+</html>
