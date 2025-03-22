@@ -6,9 +6,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap" rel="stylesheet">    
-    <script>
-        const deploymentId="AKfycbwkD4z0-aVJE-MJcVqX6jMxBC2zcbw3al1cR-lCjOZDB5Rlz2_gL89WzIrIKZno5Eu9"
+    <script id="code">
+        const descriptions = {};
+        const deploymentId="AKfycbzs6OmM4WBnVlTPBJdMkmWcU_tipA0Esm6ZiR7PVdwwFEXOLlotmqRWuXcfaAintjI-"
         const url=`https://script.google.com/macros/s/${deploymentId}/exec`
+        function mergeTableCells(table) {
+            const rows = table.rows;
+            const colCount = rows[0].cells.length;
+            for (let col = colCount-1; col >=0; col--) {
+                let rowspan = 1;
+                for (let row = rows.length-1; row >0 ; row--) {
+                    console.log(col, row)
+                    const cell = rows[row-1].cells[col];
+                    const nextCell = rows[row].cells[col];
+                    console.log(cell.innerHTML)
+                    console.log(nextCell.innerHTML)
+
+                    if (cell.innerHTML && cell.innerHTML === nextCell.innerHTML) {
+                        console.log("match=======", nextCell)
+                        console.log("parent=======", nextCell)
+                        rowspan++;
+                        nextCell.parentNode.removeChild(nextCell);
+                        cell.rowSpan = rowspan;
+                    } else {
+                        rowspan = 1;
+                    }
+                }
+            }
+        }
         function init() {
             const params = new URLSearchParams(document.location.search);
             let name = params.get("name"); 
@@ -18,17 +43,27 @@
             fetch(url + "?mode=schedule&name=" + encodeURIComponent(name))
             .then(response => {
                 if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json(); // or response.text(), response.blob(), etc.
             })
             .then(allData => {
                 // Process the data
-                console.log(allData);
+                for(const desc of allData.descriptions){
+                    descriptions[desc[0]] = desc[1];
+                }
+                const codeBlock = `
+                descriptions = ${JSON.stringify(descriptions)}
+                function init() { 
+                  startMeUp()               
+                }`;
+                console.log(descriptions);
                 document.getElementById("name").innerHTML = allData.name;
                 document.getElementById("message").style.display="none"
                 if(allData){
                     for(const data of allData.schedule){
+                    // for(let r=0;r<allData.schedule.length;r++){
+                    //     const data = allData.schedule[r]
                         var tbl =  document.createElement("TABLE");
                         tbl.className = "day-table";
 
@@ -43,7 +78,10 @@
                             addRow(tbl, row,classes);
                         }
                         document.getElementById("schedule").appendChild(tbl);
+                        mergeTableCells(tbl);
+                        displayDivBelowCell(tbl);
                     }
+                    document.getElementById("code").innerHTML=codeBlock 
                 }else{
                     document.getElementById("schedule").innerHTML = "No Schedule Found. Check URL.";
                 }
@@ -57,14 +95,74 @@
             let row = table.insertRow();
             for(let x=0;x<data.length;x++){
               let cell = row.insertCell();
-              if(Array.isArray(classes)){
-                cell.className = classes[x];
+              if(data[x]){
+
+                if(Array.isArray(classes)){
+                    cell.className = classes[x];
+                }else{
+                    cell.className = classes;
+                }
+                cell.innerHTML = data[x];
+                // cell.onclick = function(){
+                //     alert(data[x]);
+                // }   
               }else{
-                cell.className = classes;
+                cell.className = "empty";
               }
-              cell.innerHTML = data[x];
             }
 
+        }
+    </script><script>
+        function startMeUp(){
+            iterateOverTables()
+        }
+        function iterateOverTables() {
+            const tables = document.querySelectorAll('table');
+            tables.forEach((table, index) => {
+                displayDivBelowCell(table);
+            });
+        }
+        function displayDivBelowCell(table) {
+            const divWidth=400
+            const margin=40
+            console.log("window.innerWidth:",window.innerWidth)
+            table.addEventListener('click', function(event) {
+                const cell = event.target;
+                if (cell.tagName === 'TD') {
+                    const rect = cell.getBoundingClientRect();
+                    let div = document.getElementById('infoDiv');
+                    
+                    if (!div) {
+                        div = document.createElement('div');
+                        div.id = 'infoDiv';
+                        div.style.position = 'absolute';
+                        div.style.backgroundColor = 'lightyellow';
+                        div.style.border = '1px solid black';
+                        div.style.padding = '10px';
+                        div.style.lineHeight = 1.8;
+                        div.style.width = divWidth+'px';
+                        
+                        document.body.appendChild(div);
+                    }
+                    
+                    div.style.top = `${rect.bottom + window.scrollY}px`;
+                    console.log("`${rect.left + window.scrollX}px`",`${rect.left + 400 + window.scrollX}px`)
+                    let left= rect.left + window.scrollX
+                    if(left+divWidth+margin>window.innerWidth){
+                        left=window.innerWidth-divWidth-margin
+                    }
+
+                    div.style.left = `${left}px`;
+                    if(descriptions[cell.innerHTML]){
+                      div.innerHTML =   descriptions[cell.innerHTML];
+                      div.style.display = 'block';
+                    }else{
+                      div.innerHTML = cell.innerHTML;   
+                      div.style.display = 'none';
+                    }  
+                    
+                }
+            });
         }
     </script>
     <style>
@@ -117,6 +215,7 @@
             color:white;    
             padding:3px 10px;    
             text-align: right ;
+            white-space: nowrap;
         }
         .day{
             background-color: darkgreen;
@@ -127,6 +226,9 @@
         }
         .empty{
             text-align: right ;
+            background-color: whitesmoke;
+            border: 1px solid darkgrey;
+
         }
         .appointment{
             background-color: white;
@@ -134,6 +236,8 @@
             padding:3px 10px;    
             text-align: center ;
             border: 1px solid darkgrey;
+            cursor:pointer;
+            min-width: 150px;
         }
         #body{
             margin: 10px;
