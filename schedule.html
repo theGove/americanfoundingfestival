@@ -7,15 +7,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap" rel="stylesheet">    
     <script>
-        const deploymentId="AKfycbyOD8F5jfn8k9Xf2luLQs6fRDibIFwSCPyL7XfjbLjmTtZOw3SmozhDEFvzzVxJ_NwS"
+        const deploymentId="AKfycbwkD4z0-aVJE-MJcVqX6jMxBC2zcbw3al1cR-lCjOZDB5Rlz2_gL89WzIrIKZno5Eu9"
         const url=`https://script.google.com/macros/s/${deploymentId}/exec`
         function init() {
             const params = new URLSearchParams(document.location.search);
-            const name = params.get("name"); 
-            if(!name){
-                document.getElementById("schedule").innerHTML = "No name provided in URL.  Cannot get schedule.";
-                return
-            }
+            let name = params.get("name"); 
+            if(!name){name="full"}
             document.getElementById("message").style.display="block"
             document.getElementById("name").innerHTML = name;
             fetch(url + "?mode=schedule&name=" + encodeURIComponent(name))
