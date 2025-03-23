@@ -16,15 +16,15 @@
             for (let col = colCount-1; col >=0; col--) {
                 let rowspan = 1;
                 for (let row = rows.length-1; row >0 ; row--) {
-                    console.log(col, row)
+                    //console.log(col, row)
                     const cell = rows[row-1].cells[col];
                     const nextCell = rows[row].cells[col];
-                    console.log(cell.innerHTML)
-                    console.log(nextCell.innerHTML)
+                    //console.log(cell.innerHTML)
+                    //console.log(nextCell.innerHTML)
 
                     if (cell.innerHTML && cell.innerHTML === nextCell.innerHTML) {
-                        console.log("match=======", nextCell)
-                        console.log("parent=======", nextCell)
+                        //console.log("match=======", nextCell)
+                        //console.log("parent=======", nextCell)
                         rowspan++;
                         nextCell.parentNode.removeChild(nextCell);
                         cell.rowSpan = rowspan;
@@ -48,16 +48,20 @@
                 return response.json(); // or response.text(), response.blob(), etc.
             })
             .then(allData => {
+                //console.log("all data",allData)
                 // Process the data
                 for(const desc of allData.descriptions){
-                    descriptions[desc[0]] = desc[1];
+                    descriptions[desc[0]] = desc[1].split("Audience-involved").join('<span class="involved">Audience-involved</span>');
+                    if( desc[1]==="audeince"){
+                        descriptions.audience = true
+                    }
                 }
                 const codeBlock = `
                 descriptions = ${JSON.stringify(descriptions)}
                 function init() { 
                   startMeUp()               
                 }`;
-                console.log(descriptions);
+                //console.log(descriptions);
                 document.getElementById("name").innerHTML = allData.name;
                 document.getElementById("message").style.display="none"
                 if(allData){
@@ -67,15 +71,27 @@
                         var tbl =  document.createElement("TABLE");
                         tbl.className = "day-table";
 
-                        console.log(data);
+                        //console.log(data);
                         const classes = new Array(data[0].length).fill("venue");
                         classes[0] = "day";
-                        addRow(tbl, data.shift(),classes);
+                        let rowNum=0
+                        const headerData = data.shift();
+                        
+                        //console.log("headerData",headerData)
+                        addRow(tbl, headerData,classes, headerData[0] + "-" + rowNum++);    
                         for(const row of data){
                             const classes = new Array(row.length).fill("appointment");
                             classes[0] = "time";
-                            console.log(classes)
-                            addRow(tbl, row,classes);
+                            for(let x=0;x<row.length;x++){
+                                if(descriptions[row[x]]){
+                                    
+                                    if(descriptions[row[x]].includes("audience-involved")){
+                                        classes[x] = "audience";
+                                        console.log("audience",row[x])
+                                    }
+                                }
+                            }
+                            addRow(tbl, row,classes, headerData[0] + "-" + rowNum++);
                         }
                         document.getElementById("schedule").appendChild(tbl);
                         mergeTableCells(tbl);
@@ -91,8 +107,10 @@
                 console.error('There was a problem with the fetch operation:', error);
             });
         }
-        function addRow(table, data, classes){
+        function addRow(table, data, classes, id){
+            //console.log("addRow",id)
             let row = table.insertRow();
+            row.id = id;
             for(let x=0;x<data.length;x++){
               let cell = row.insertCell();
               if(data[x]){
@@ -115,18 +133,49 @@
     </script><script>
         function startMeUp(){
             document.getElementById("hs").style.display="block"
+            hideRow("thursday-1")
+            hideRow("thursday-2")
+            hideRow("thursday-3")
+            hideRow("thursday-4")
+
+
             iterateOverTables()
         }
+
+        function hideRow(id){
+            const row = document.getElementById(id);
+            for (let col = row.cells.length-1; col >=0; col--) {
+                row.cells[col].innerHTML = ""
+                row.cells[col].className = "empty"
+            }
+        }
+        function fixHeader(row){
+            const colnumbers=[]
+            for (let col = row.cells.length-1; col >=0; col--) {
+                if(row.cells[col].innerHTML.startsWith("Table")){
+                    colnumbers.unshift(col)
+                }
+                
+            }
+            row.cells[colnumbers[0]].colSpan = colnumbers.length
+            row.cells[colnumbers[0]].className = "corner"
+            row.cells[colnumbers[0]].innerHTML = "Founders' Corner (#7)"
+            for (let col = colnumbers.length-1; col > 0; col--) {
+                row.cells[colnumbers[col]].parentNode.removeChild(row.cells[colnumbers[col]]);
+
+            }
+        }    
         function iterateOverTables() {
             const tables = document.querySelectorAll('table');
             tables.forEach((table, index) => {
                 displayDivBelowCell(table);
+                fixHeader(table.rows[0]);
             });
         }
         function displayDivBelowCell(table) {
             const divWidth=400
             const margin=40
-            console.log("window.innerWidth:",window.innerWidth)
+            //console.log("window.innerWidth:",window.innerWidth)
             table.addEventListener('click', function(event) {
                 const cell = event.target;
                 if (cell.tagName === 'TD') {
@@ -147,7 +196,7 @@
                     }
                     
                     div.style.top = `${rect.bottom + window.scrollY}px`;
-                    console.log("`${rect.left + window.scrollX}px`",`${rect.left + 400 + window.scrollX}px`)
+                    //console.log("`${rect.left + window.scrollX}px`",`${rect.left + 400 + window.scrollX}px`)
                     let left= rect.left + window.scrollX
                     if(left+divWidth+margin>window.innerWidth){
                         left=window.innerWidth-divWidth-margin
@@ -224,6 +273,12 @@
             padding:3px 10px;    
             text-align: center ;
         }
+        .corner{
+            background-color: #4863A0;
+            color:white;    
+            padding:3px 10px;    
+            text-align: center ;
+        }
         .time{
             background-color: maroon;
             color:white;    
@@ -255,6 +310,21 @@
         }
         .appointment:hover{
             background-color: lemonchiffon;
+        }
+        .audience{
+            background-color: #9FE2BF;
+            color:black;    
+            padding:3px 10px;    
+            text-align: center ;
+            border: 1px solid darkgrey;
+            cursor:pointer;
+            min-width: 150px;
+        }
+        .audience:hover{
+            background-color: lemonchiffon;
+        }
+        .involved{
+            background-color: #9FE2BF;
         }
         #body{
             margin: 10px;
