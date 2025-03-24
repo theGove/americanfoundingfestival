@@ -1,74 +1,367 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script src="code.js"></script>
-    <link rel="stylesheet" href="style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Merienda:wght@800&display=swap" rel="stylesheet">
-    <title>AFF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap" rel="stylesheet">    
+    <script id="code">
+        const descriptions = {};
+        const deploymentId="AKfycbzs6OmM4WBnVlTPBJdMkmWcU_tipA0Esm6ZiR7PVdwwFEXOLlotmqRWuXcfaAintjI-"
+        const url=`https://script.google.com/macros/s/${deploymentId}/exec`
+        function mergeTableCells(table) {
+            const rows = table.rows;
+            const colCount = rows[0].cells.length;
+            for (let col = colCount-1; col >=0; col--) {
+                let rowspan = 1;
+                for (let row = rows.length-1; row >0 ; row--) {
+                    //console.log(col, row)
+                    const cell = rows[row-1].cells[col];
+                    const nextCell = rows[row].cells[col];
+                    //console.log(cell.innerHTML)
+                    //console.log(nextCell.innerHTML)
+
+                    if (cell.innerHTML && cell.innerHTML === nextCell.innerHTML) {
+                        //console.log("match=======", nextCell)
+                        //console.log("parent=======", nextCell)
+                        rowspan++;
+                        nextCell.parentNode.removeChild(nextCell);
+                        cell.rowSpan = rowspan;
+                    } else {
+                        rowspan = 1;
+                    }
+                }
+            }
+        }
+        function init() {
+            const params = new URLSearchParams(document.location.search);
+            let name = params.get("name"); 
+            if(!name){name="full"}
+            document.getElementById("message").style.display="block"
+            document.getElementById("name").innerHTML = name;
+            fetch(url + "?mode=schedule&name=" + encodeURIComponent(name))
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json(); // or response.text(), response.blob(), etc.
+            })
+            .then(allData => {
+                //console.log("all data",allData)
+                // Process the data
+                for(const desc of allData.descriptions){
+                    descriptions[desc[0]] = desc[1].split("Audience-involved").join('<span class="involved">Audience-involved</span>');
+                    if( desc[1]==="audeince"){
+                        descriptions.audience = true
+                    }
+                }
+                const codeBlock = `
+                descriptions = ${JSON.stringify(descriptions)}
+                function init() { 
+                  startMeUp()               
+                }`;
+                //console.log(descriptions);
+                document.getElementById("name").innerHTML = allData.name;
+                document.getElementById("message").style.display="none"
+                if(allData){
+                    for(const data of allData.schedule){
+                    // for(let r=0;r<allData.schedule.length;r++){
+                    //     const data = allData.schedule[r]
+                        var tbl =  document.createElement("TABLE");
+                        tbl.className = "day-table";
+
+                        //console.log(data);
+                        const classes = new Array(data[0].length).fill("venue");
+                        classes[0] = "day";
+                        let rowNum=0
+                        const headerData = data.shift();
+                        
+                        //console.log("headerData",headerData)
+                        addRow(tbl, headerData,classes, headerData[0] + "-" + rowNum++);    
+                        for(const row of data){
+                            const classes = new Array(row.length).fill("appointment");
+                            classes[0] = "time";
+                            for(let x=0;x<row.length;x++){
+                                if(descriptions[row[x]]){
+                                    
+                                    if(descriptions[row[x]].includes("audience-involved")){
+                                        classes[x] = "audience";
+                                        console.log("audience",row[x])
+                                    }
+                                }
+                            }
+                            addRow(tbl, row,classes, headerData[0] + "-" + rowNum++);
+                        }
+                        div = document.createElement('div');
+                        div.className = 'hscroll';
+                        document.getElementById("schedule").appendChild(div);
+                        div.appendChild(tbl);
+                        mergeTableCells(tbl);
+                        displayDivBelowCell(tbl);
+                    }
+                    document.getElementById("code").innerHTML=codeBlock 
+                }else{
+                    document.getElementById("schedule").innerHTML = "No Schedule Found. Check URL.";
+                }
+            })
+            .catch(error => {
+                // Handle errors
+                console.error('There was a problem with the fetch operation:', error);
+            });
+        }
+        function addRow(table, data, classes, id){
+            //console.log("addRow",id)
+            let row = table.insertRow();
+            row.id = id;
+            for(let x=0;x<data.length;x++){
+              let cell = row.insertCell();
+              if(data[x]){
+
+                if(Array.isArray(classes)){
+                    cell.className = classes[x];
+                }else{
+                    cell.className = classes;
+                }
+                cell.innerHTML = data[x];
+                // cell.onclick = function(){
+                //     alert(data[x]);
+                // }   
+              }else{
+                cell.className = "empty";
+              }
+            }
+
+        }
+    </script><script>
+        function startMeUp(){
+            document.getElementById("hs").style.display="block"
+            hideRow("thursday-1")
+            hideRow("thursday-2")
+            hideRow("thursday-3")
+            hideRow("thursday-4")
+
+
+            iterateOverTables()
+        }
+
+        function hideRow(id){
+            const row = document.getElementById(id);
+            for (let col = row.cells.length-1; col >=0; col--) {
+                row.cells[col].innerHTML = ""
+                row.cells[col].className = "empty"
+            }
+        }
+        function fixHeader(row){
+            const colnumbers=[]
+            for (let col = row.cells.length-1; col >=0; col--) {
+                if(row.cells[col].innerHTML.startsWith("Table")){
+                    colnumbers.unshift(col)
+                }
+                
+            }
+            row.cells[colnumbers[0]].colSpan = colnumbers.length
+            row.cells[colnumbers[0]].className = "corner"
+            row.cells[colnumbers[0]].innerHTML = "Founders' Corner (#7)"
+            for (let col = colnumbers.length-1; col > 0; col--) {
+                row.cells[colnumbers[col]].parentNode.removeChild(row.cells[colnumbers[col]]);
+
+            }
+        }    
+        function iterateOverTables() {
+            const tables = document.querySelectorAll('table');
+            tables.forEach((table, index) => {
+                displayDivBelowCell(table);
+                fixHeader(table.rows[0]);
+            });
+        }
+        function displayDivBelowCell(table) {
+            const divWidth=400
+            const margin=40
+            //console.log("window.innerWidth:",window.innerWidth)
+            table.addEventListener('click', function(event) {
+                const cell = event.target;
+                if (cell.tagName === 'TD') {
+                    const rect = cell.getBoundingClientRect();
+                    let div = document.getElementById('infoDiv');
+                    
+                    if (!div) {
+                        div = document.createElement('div');
+                        div.id = 'infoDiv';
+                        div.style.position = 'absolute';
+                        div.style.backgroundColor = 'lightyellow';
+                        div.style.border = '1px solid black';
+                        div.style.padding = '10px';
+                        div.style.lineHeight = 1.8;
+                        div.style.width = divWidth+'px';
+                        
+                        document.body.appendChild(div);
+                    }
+                    
+                    div.style.top = `${rect.bottom + window.scrollY}px`;
+                    //console.log("`${rect.left + window.scrollX}px`",`${rect.left + 400 + window.scrollX}px`)
+                    let left= rect.left + window.scrollX
+                    if(left+divWidth+margin>window.innerWidth){
+                        left=window.innerWidth-divWidth-margin
+                    }
+
+                    div.style.left = `${left}px`;
+                    if(descriptions[cell.innerHTML]){
+                      div.innerHTML =   descriptions[cell.innerHTML];
+                      div.style.display = 'block';
+                    }else{
+                      div.innerHTML = cell.innerHTML;   
+                      div.style.display = 'none';
+                    }  
+                    
+                }
+            });
+        }
+    </script>
+    <style>
+        body { 
+            font-family: 'Merriweather', serif; 
+            padding: 0;
+            margin: 0 ;
+            background-color: #FFEBCD;
+        }
+        #header{
+            background-color: maroon;
+            color:white;
+            text-align: center;
+            padding:10px;
+        }
+        #hs{
+            text-align: center;
+        }
+        #act{
+            background-color: maroon;
+            color:white;
+            text-align: center;
+            padding:10px;
+        }
+        #message{
+            animation: blinker 2s linear infinite;
+        }
+        #free{
+            color:red;
+            animation: blinker 1s linear 3;
+        }
+        @keyframes blinker {
+        50% {
+            opacity: 0;
+        }
+        }
+        #name{
+            margin-top: 20px;
+            font-size: 50px;
+        }
+        #sched{
+            background-color: #2B3856;
+            color:white;
+            text-align: center;
+            padding:10px;
+            font-size: 20px;
+        }
+        .day-table{
+            border-collapse: collapse;
+            padding:3px;
+            margin:auto;
+            margin-top:20px;
+            
+        }
+        .venue{
+            background-color: #2B3856;
+            color:white;    
+            padding:3px 10px;    
+            text-align: center ;
+        }
+        .corner{
+            background-color: #4863A0;
+            color:white;    
+            padding:3px 10px;    
+            text-align: center ;
+        }
+        .time{
+            background-color: maroon;
+            color:white;    
+            padding:3px 10px;    
+            text-align: right ;
+            white-space: nowrap;
+            border: 1px solid rgb(201, 14, 14);
+        }
+        .day{
+            background-color: darkgreen;
+            color:yellow;    
+            padding:3px 10px;    
+            text-align: center ;
+            text-transform: capitalize;
+        }
+        .empty{
+            text-align: right ;
+            background-color: whitesmoke;
+            border: 1px solid darkgrey;
+
+        }
+        .hscroll{
+            overflow-x: auto;
+            width:100%
+        }
+        .appointment{
+            background-color: white;
+            color:black;    
+            padding:3px 10px;    
+            text-align: center ;
+            border: 1px solid darkgrey;
+            cursor:pointer;
+            min-width: 150px;
+        }
+        .appointment:hover{
+            background-color: lemonchiffon;
+        }
+        .audience{
+            background-color: #9FE2BF;
+            color:black;    
+            padding:3px 10px;    
+            text-align: center ;
+            border: 1px solid darkgrey;
+            cursor:pointer;
+            min-width: 150px;
+        }
+        .audience:hover{
+            background-color: lemonchiffon;
+        }
+        .involved{
+            background-color: #9FE2BF;
+        }
+        #body{
+            margin: 10px;
+            text-align: center;
+        }
+    </style>
 </head>
-<body onload="init()"">
-
-    <div id="splash">
-        <div data-index="0" id="hero" onClick="clearInterval(intervalId);changeImage(event)">
-        </div>
-        <div id="splash-text">
-            American Founding Festival    
-        <div>
+<body onLoad="init()">
+    <div id="header">America 250 Founders Festival</div>
+    <div id="sched">Schedule of Events</div>
+    <div id="body">
+    <div id="name"></div>
+    <div id="hs" style="display: none;">
+        <img src="images/logo.png"><br>
+        <span id="free">Free admission</span> during Home School and Family Hours: <br>
+        <div style="display:inline-block;text-align:left;margin-bottom: 2rem;;margin-top: 0;">
+            Thursday (4/17/2025), Noon - 3:30 PM
+            <br>Friday (4/18/2025), 10:00 am - 3:30 PM
+        </div><br>
+        <a href="https://festival.foundingamerica.org/schedule/map.html" target="_blank">Village Map</a>
+        <br><br>
+        
     </div>
-
-    <div id="content" class="libre-baskerville-bold">
-        <p>
-        The American Founding Festival is the Western United States' premier living history event commemorating the 250th anniversary of the beginning of the American Revolution. This outdoor event is a celebration of the founding of the United States of America, and is free for the public to attend.  We expect in excess of 20,000 attendees over the three days.
-        </p><p>
-            Join us on <span style="color:red;">April 17-19, 2025</span>, Washington County, Utah
-        </p><p>
-            We are currently seeking statements of interest from first-person and third-person historic interpreters in all areas of the American Founding, including military, artisan, and 18th century living.  Some funds to help reimburse travel expenses are available and will be allocated on a case-by-case basis.
-        </p><p>
-            Program Coordinator: Gove Allen, gove@colonialheritage.org 801-372-0683.  Please email, text, or call with any questions.
-        </p><div id="intent">
-            <span style="font-size: 1.2rem; color:red">Statement of Interest:</span> You are not making any commitment by completing this statement of interest, you are only indicating an interest in participating as a presenter.  Completing this form will get you added to the email list used for planning the event and initiate a conservation with the program coordinator.  Invitations to participate will be sent through email.
-            <form target="_blank" method="post" action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSfxR7UmACJYWkuY65_QswIz7ndYLlhh60GG0s40JQYdTS3Ucg/formResponse">
-                <div class="label">First Name: </div>
-                <div class="field"><input name="entry.1748120877" type="text" size="20"></div>
-
-                <div class="label">Last Name: </div>
-                <div class="field"><input name="entry.1231813652" type="text" size="20"></div>
-
-                <div class="label">Email Address: </div>
-                <div class="field"><input name="entry.1052290559" type="text" size="30"></div>
-
-                <div class="label">Phone Number: </div>
-                <div class="field"><input name="entry.397842789" type="text" size="20"></div>
-
-                <div class="label">Phone Type:</div>
-                <div class="field">&nbsp;&nbsp;&nbsp;<input name="entry.603239230" type="radio" value="mobile"> Mobile&nbsp;&nbsp;&nbsp; <input name="entry.603239230" type="radio" value="Land line"> Land Line</div>
-
-                <div class="label">Participation Type:</div>
-                <div class="field">&nbsp;&nbsp;&nbsp;<input name="entry.2138511843" type="checkbox" value="fp"> First-Person Interpretation</div>
-                <div class="field">&nbsp;&nbsp;&nbsp;<input name="entry.2086544704" type="checkbox" value="tp"> Third-Person Interpretation</div>
-                <div class="field">&nbsp;&nbsp;&nbsp;<input name="entry.1917212797" type="checkbox" value="gv"> General Volunteer (setup, take-down, or behind-the-scenes)</div>
-
-                <div class="label">If first-person, whom do you portray? </div>
-                <div class="field"><input name="entry.1327717094" type="text" size="40"></div>
-
-                <div class="label">URL where we can learn more about your interpretation (optional): </div>
-                <div class="field"><input name="entry.66911553" type="text" size="40"></div>
-
-                <div class="label">Note or Questions: </div>
-                <div class="field"><textarea name="entry.1400844432" type="text" style="height:3rem;width:100%"></textarea></div>
-
-                <div class="field" style="margin-top: 1rem;"><input type="submit" value="Submit"></div>
-
-            </form>
-        </div><p>
-            The American Founding Festival is sponsored by <a href="https://unitedwepledge.org/" target="_blank">United We Pledge</a>, a 501c3 public charity.
-
-        </p>
+    <div id="act">Onging activities for kids at the Print Shop, Fiber Arts, Chandlery, Coloinal School, and Laundry</div>
+    <div id="message" style="display: none;">Getting Schedule . . . </div>
     
+    <div id="schedule">
+
     </div>
-    &nbsp;
+    </div>
 </body>
 </html>
