@@ -48,7 +48,7 @@
                 return response.json(); // or response.text(), response.blob(), etc.
             })
             .then(allData => {
-                //console.log("all data",allData)
+                console.log("all data",allData)
                 // Process the data
                 for(const desc of allData.descriptions){
                     descriptions[desc[0]] = desc[1].split("Audience-involved").join('<span class="involved">Audience-involved</span>');
@@ -87,7 +87,7 @@
                                     
                                     if(descriptions[row[x]].includes("audience-involved")){
                                         classes[x] = "audience";
-                                        console.log("audience",row[x])
+                                        //console.log("audience",row[x])
                                     }
                                 }
                             }
@@ -101,6 +101,7 @@
                         displayDivBelowCell(tbl);
                     }
                     document.getElementById("code").innerHTML=codeBlock 
+                    console.log("just wrote init code")
                 }else{
                     document.getElementById("schedule").innerHTML = "No Schedule Found. Check URL.";
                 }
